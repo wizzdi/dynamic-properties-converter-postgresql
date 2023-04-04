@@ -30,7 +30,7 @@ public class AuthorRepository {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Author> q = cb.createQuery(Author.class);
         Root<Author> r = q.from(Author.class);
-        List<Predicate> preds = FilterDynamicPropertiesUtils.filterDynamic(filter,cb,r,"dynamicProperties");
+        List<Predicate> preds = FilterDynamicPropertiesUtils.filterDynamic(filter,cb,r.get("dynamicProperties"));
 
         q.select(r).where(preds.toArray(Predicate[]::new));
         TypedQuery<Author> query = em.createQuery(q);

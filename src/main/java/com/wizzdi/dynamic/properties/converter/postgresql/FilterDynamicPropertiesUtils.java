@@ -1,20 +1,17 @@
 package com.wizzdi.dynamic.properties.converter.postgresql;
 
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 
 import java.util.*;
 
 public class FilterDynamicPropertiesUtils {
 
 
-    public static List<Predicate> filterDynamic(Map<String, DynamicFilterItem> genericPredicates, CriteriaBuilder cb, Root<?> r, String jsonNodeField) {
+    public static List<Predicate> filterDynamic(Map<String, DynamicFilterItem> genericPredicates, CriteriaBuilder cb, Path<?> pathToDynamic) {
         List<Predicate> existingPredicates = new ArrayList<>();
 
-        List<Expression<?>> pathSoFar = new ArrayList<>(Collections.singletonList(r.get(jsonNodeField)));
+        List<Expression<?>> pathSoFar = new ArrayList<>(Collections.singletonList(pathToDynamic));
         filterDynamic(genericPredicates, cb,pathSoFar, existingPredicates);
         return existingPredicates;
     }
@@ -23,7 +20,7 @@ public class FilterDynamicPropertiesUtils {
         return "jsonb_extract_path_text(" + jsonNodeField + ",'" + key + "')";
     }
 
-    public static void filterDynamic(Map<String, DynamicFilterItem> genericPredicates, CriteriaBuilder cb,  List<Expression<?>> pathSoFar,List<Predicate> existingPredicates) {
+    private static void filterDynamic(Map<String, DynamicFilterItem> genericPredicates, CriteriaBuilder cb,  List<Expression<?>> pathSoFar,List<Predicate> existingPredicates) {
         for (Map.Entry<String, DynamicFilterItem> entry : genericPredicates.entrySet()) {
             DynamicFilterItem dynamicFilterItem = entry.getValue();
             String key = entry.getKey();

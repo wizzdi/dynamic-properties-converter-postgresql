@@ -26,12 +26,13 @@ public class FilterDynamicPropertiesUtils {
             String key = entry.getKey();
             List<Expression<?>> newPath = new ArrayList<>(pathSoFar);
             newPath.add(cb.literal(key));
-            if (dynamicFilterItem instanceof DynamicNodeItem node) {
-                filterDynamic(node.getChildren(), cb, newPath,existingPredicates);
+            if (dynamicFilterItem .getChildren()!=null) {
+                filterDynamic(dynamicFilterItem.getChildren(), cb, newPath,existingPredicates);
+                return;
             }
-            if(dynamicFilterItem instanceof DynamicPredicateItem dynamicPredicate) {
+            if(dynamicFilterItem.getFilterType()!=null) {
                 Expression<?>[] path=newPath.toArray(new Expression[0]);
-                Object value = dynamicPredicate.getValue();
+                Object value = dynamicFilterItem.getValue();
                 Class<?> type = value == null ? null : value.getClass();
                 Expression<?> jsonb_extract_path = cb.function("jsonb_extract_path_text", String.class, path);
                 if(type!=null&&!String.class.equals(type)){
@@ -43,7 +44,7 @@ public class FilterDynamicPropertiesUtils {
                     }
 
                 }
-                Predicate pred= switch (dynamicPredicate.getFilterType()){
+                Predicate pred= switch (dynamicFilterItem.getFilterType()){
 
                     case EQUALS -> cb.equal(jsonb_extract_path, value);
                     case NOT_EQUALS -> cb.notEqual(jsonb_extract_path, value);

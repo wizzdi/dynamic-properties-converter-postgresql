@@ -2,22 +2,44 @@ package com.wizzdi.dynamic.properties.converter.postgresql;
 
 import com.fasterxml.jackson.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 public class DynamicFilterItem {
 
-    private FilterType filterType;
-    private Object value;
+    private List<DynamicPredicate> predicates=new ArrayList<>();
+
     private Map<String,DynamicFilterItem> children=null;
 
     public DynamicFilterItem() {
     }
 
-    public DynamicFilterItem(FilterType filterType, Object value) {
-        this.filterType = filterType;
-        this.value = value;
+    public static DynamicFilterItem isNull(){
+        return new DynamicFilterItem(List.of(new DynamicPredicate(FilterType.IS_NULL,null)));
+    }
+
+    public static DynamicFilterItem isNotNull(){
+        return new DynamicFilterItem(List.of(new DynamicPredicate(FilterType.IS_NOT_NULL,null)));
+    }
+    public static DynamicFilterItem of(FilterType filterType,Object value){
+        return new DynamicFilterItem(List.of(new DynamicPredicate(filterType,value)));
+    }
+
+    public static DynamicFilterItem of(String filterType,DynamicFilterItem dynamicFilterItem){
+        return new DynamicFilterItem(Map.of(filterType,dynamicFilterItem));
+    }
+
+    public static DynamicFilterItem of(String filterType1,DynamicFilterItem dynamicFilterItem1,String filterType2,DynamicFilterItem dynamicFilterItem2){
+        return new DynamicFilterItem(Map.of(filterType1,dynamicFilterItem1,filterType2,dynamicFilterItem2));
+    }
+
+
+
+    public DynamicFilterItem(List<DynamicPredicate> predicates) {
+        this.predicates = predicates;
     }
 
     public DynamicFilterItem(Map<String, DynamicFilterItem> children) {
@@ -42,21 +64,12 @@ public class DynamicFilterItem {
         children.put(key, value);
     }
 
-    public FilterType getFilterType() {
-        return filterType;
+    public List<DynamicPredicate> getPredicates() {
+        return predicates;
     }
 
-    public <T extends DynamicFilterItem> T setFilterType(FilterType filterType) {
-        this.filterType = filterType;
-        return (T) this;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public <T extends DynamicFilterItem> T setValue(Object value) {
-        this.value = value;
+    public <T extends DynamicFilterItem> T setPredicates(List<DynamicPredicate> predicates) {
+        this.predicates = predicates;
         return (T) this;
     }
 }

@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = App.class)
@@ -25,18 +26,20 @@ public class DynamicFilterTest {
 
     @Autowired
     private AuthorService authorService;
+    private final OffsetDateTime baseDate = OffsetDateTime.now();
+
 
 
     @Test
     @Order(1)
     public void testCreate() {
         for (int i = 0; i < 10; i++) {
-            Map<String, Object> dynamic = Map.of("surName", "van " + i, "location", Map.of("cityName", "city " + i, "capital", i % 2 == 0), "age", i * 10, "familiy", "kuku", "books", List.of("first book " + i, "second book " + i), "birthDate", OffsetDateTime.now().minusYears(i * 10));
+            Map<String, Object> dynamic = Map.of("surName", "van " + i, "location", Map.of("cityName", "city " + i, "capital", i % 2 == 0), "age", i * 10, "familiy", "kuku", "books", List.of("first book " + i, "second book " + i), "birthDate", baseDate.minusYears(i * 10));
             authorService.createAuthor("van " + i, dynamic);
         }
 
         for (int i = 0; i < 10; i++) {
-            Map<String, Object> dynamic = Map.of("surName", "kuku " + i, "location", Map.of("cityName", "city " + i, "capital", i % 2 == 0), "age", i * 10, "books", List.of("first book " + i, "second book " + i, "birthDate", OffsetDateTime.now().minusYears(i * 10)));
+            Map<String, Object> dynamic = Map.of("surName", "kuku " + i, "location", Map.of("cityName", "city " + i, "capital", i % 2 == 0), "age", i * 10, "books", List.of("first book " + i, "second book " + i), "birthDate", baseDate.minusYears(i * 10));
             authorService.createAuthor("kuku " + i, dynamic);
         }
 
@@ -46,7 +49,7 @@ public class DynamicFilterTest {
     @Test
     @Order(2)
     public void testEQ() {
-        List<Author> surName = authorService.getAuthors(Map.of("surName", new DynamicFilterItem().setValue("van 1").setFilterType(FilterType.EQUALS)));
+        List<Author> surName = authorService.getAuthors(Map.of("surName", DynamicFilterItem.of(FilterType.EQUALS, "van 1")));
         Assertions.assertEquals(1, surName.size());
 
     }
@@ -54,7 +57,7 @@ public class DynamicFilterTest {
     @Test
     @Order(2)
     public void testEQBool() {
-        List<Author> surName = authorService.getAuthors(Map.of("location", new DynamicFilterItem(Map.of("capital", new DynamicFilterItem().setValue(true).setFilterType(FilterType.EQUALS)))));
+        List<Author> surName = authorService.getAuthors(Map.of("location", DynamicFilterItem.of("capital", DynamicFilterItem.of(FilterType.EQUALS, true))));
         Assertions.assertEquals(10, surName.size());
 
     }
@@ -62,7 +65,7 @@ public class DynamicFilterTest {
     @Test
     @Order(3)
     public void testNEQ() {
-        List<Author> surName = authorService.getAuthors(Map.of("surName", new DynamicFilterItem().setValue("van 1").setFilterType(FilterType.NOT_EQUALS)));
+        List<Author> surName = authorService.getAuthors(Map.of("surName", DynamicFilterItem.of(FilterType.NOT_EQUALS, "van 1")));
         Assertions.assertEquals(19, surName.size());
 
     }
@@ -70,7 +73,7 @@ public class DynamicFilterTest {
     @Test
     @Order(3)
     public void testNEQNested() {
-        List<Author> surName = authorService.getAuthors(Map.of("location", new DynamicFilterItem(Map.of("cityName", new DynamicFilterItem().setValue("city 0").setFilterType(FilterType.NOT_EQUALS)))));
+        List<Author> surName = authorService.getAuthors(Map.of("location", DynamicFilterItem.of("cityName", DynamicFilterItem.of(FilterType.NOT_EQUALS, "city 0"))));
         Assertions.assertEquals(18, surName.size());
 
     }
@@ -78,7 +81,7 @@ public class DynamicFilterTest {
     @Test
     @Order(4)
     public void testContains() {
-        List<Author> surName = authorService.getAuthors(Map.of("surName", new DynamicFilterItem().setValue("ku").setFilterType(FilterType.CONTAINS)));
+        List<Author> surName = authorService.getAuthors(Map.of("surName", DynamicFilterItem.of(FilterType.CONTAINS, "ku")));
         Assertions.assertEquals(10, surName.size());
 
 
@@ -87,8 +90,26 @@ public class DynamicFilterTest {
     @Test
     @Order(5)
     public void testIn() {
-        List<Author> surName = authorService.getAuthors(Map.of("surName", new DynamicFilterItem().setValue(new ArrayList<>(List.of("van 1", "van 2"))).setFilterType(FilterType.IN)));
+        List<Author> surName = authorService.getAuthors(Map.of("surName", DynamicFilterItem.of(FilterType.IN, new ArrayList<>(List.of("van 1", "van 2")))));
         Assertions.assertEquals(2, surName.size());
+
+
+    }
+
+    @Test
+    @Order(5)
+    public void testInNumber() {
+        List<Author> surName = authorService.getAuthors(Map.of("age", DynamicFilterItem.of(FilterType.IN, new ArrayList<>(List.of(10,20)))));
+        Assertions.assertEquals(4, surName.size());
+
+
+    }
+
+    @Test
+    @Order(6)
+    public void testInBoolean() {
+        List<Author> surName = authorService.getAuthors(Map.of("location", DynamicFilterItem.of("capital", DynamicFilterItem.of(FilterType.IN, List.of(true,false)))));
+        Assertions.assertEquals(20, surName.size());
 
 
     }
@@ -96,8 +117,17 @@ public class DynamicFilterTest {
     @Test
     @Order(6)
     public void testLT() {
-        List<Author> surName = authorService.getAuthors(Map.of("age", new DynamicFilterItem().setValue(30).setFilterType(FilterType.LESS_THAN)));
+        List<Author> surName = authorService.getAuthors(Map.of("age", DynamicFilterItem.of(FilterType.LESS_THAN, 30)));
         Assertions.assertEquals(6, surName.size());
+
+
+    }
+
+    @Test
+    @Order(6)
+    public void testLTDate() {
+        List<Author> surName = authorService.getAuthors(Map.of("birthDate", DynamicFilterItem.of(FilterType.LESS_THAN, baseDate.minusYears(50))));
+        Assertions.assertEquals(10, surName.size());
 
 
     }
@@ -105,7 +135,7 @@ public class DynamicFilterTest {
     @Test
     @Order(7)
     public void testLTE() {
-        List<Author> surName = authorService.getAuthors(Map.of("age", new DynamicFilterItem().setValue(30).setFilterType(FilterType.LESS_THAN_OR_EQUAL)));
+        List<Author> surName = authorService.getAuthors(Map.of("age", DynamicFilterItem.of(FilterType.LESS_THAN_OR_EQUAL, 30)));
         Assertions.assertEquals(8, surName.size());
 
 
@@ -114,8 +144,19 @@ public class DynamicFilterTest {
     @Test
     @Order(8)
     public void testGT() {
-        List<Author> surName = authorService.getAuthors(Map.of("age", new DynamicFilterItem().setValue(30).setFilterType(FilterType.GREATER_THAN)));
+        List<Author> surName = authorService.getAuthors(Map.of("age", DynamicFilterItem.of(FilterType.GREATER_THAN, 30)));
         Assertions.assertEquals(12, surName.size());
+
+
+    }
+
+    @Test
+    @Order(8)
+    public void testGTDate() {
+        OffsetDateTime date = baseDate.minusYears(50);
+        List<Author> surName = authorService.getAuthors(Map.of("birthDate", DynamicFilterItem.of(FilterType.GREATER_THAN, date)));
+        Assertions.assertEquals(10, surName.size());
+        System.out.println("authors over date " + date + " are " +surName.stream().map(f->f.getName()+" at "+f.getDynamicProperties().get("birthDate")).collect(Collectors.joining(",")) );
 
 
     }
@@ -123,16 +164,18 @@ public class DynamicFilterTest {
     @Test
     @Order(9)
     public void testGTE() {
-        List<Author> surName = authorService.getAuthors(Map.of("age", new DynamicFilterItem().setValue(30).setFilterType(FilterType.GREATER_THAN_OR_EQUAL)));
+        List<Author> surName = authorService.getAuthors(Map.of("age", DynamicFilterItem.of(FilterType.GREATER_THAN_OR_EQUAL, 30)));
         Assertions.assertEquals(14, surName.size());
 
 
     }
 
+
+
     @Test
     @Order(10)
     public void testNull() {
-        List<Author> surName = authorService.getAuthors(Map.of("familiy", new DynamicFilterItem().setFilterType(FilterType.IS_NULL)));
+        List<Author> surName = authorService.getAuthors(Map.of("familiy", DynamicFilterItem.isNull()));
         Assertions.assertEquals(10, surName.size());
 
 
@@ -141,7 +184,7 @@ public class DynamicFilterTest {
     @Test
     @Order(10)
     public void testNotNull() {
-        List<Author> surName = authorService.getAuthors(Map.of("familiy", new DynamicFilterItem().setFilterType(FilterType.IS_NOT_NULL)));
+        List<Author> surName = authorService.getAuthors(Map.of("familiy", DynamicFilterItem.isNotNull()));
         Assertions.assertEquals(10, surName.size());
 
 
@@ -151,7 +194,7 @@ public class DynamicFilterTest {
     @Order(11)
     public void testSerialization() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        Map<String, DynamicFilterItem> filter = Map.of("location", new DynamicFilterItem(Map.of("capital", new DynamicFilterItem().setValue(true).setFilterType(FilterType.EQUALS))));
+        Map<String, DynamicFilterItem> filter = Map.of("location", DynamicFilterItem.of("capital", DynamicFilterItem.of(FilterType.EQUALS, true)));
         objectMapper.writeValueAsString(filter);
         System.out.println(filter);
 
@@ -164,22 +207,36 @@ public class DynamicFilterTest {
         ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         String s = """
                 {
-                  "location": {
-                    "capital": {
-                      "value": true,
-                      "filterType": "EQUALS"
+                    "location": {
+                        "capital": {
+                            "predicates": [{
+                                    "type": "EQUALS",
+                                    "value": true
+                                }
+                            ]
+                        }
+                                
                     }
-                  }
                 }
                 """;
-        TypeReference<Map<String, DynamicFilterItem>> typeRef = new TypeReference<>() {};
+        TypeReference<Map<String, DynamicFilterItem>> typeRef = new TypeReference<>() {
+        };
         Map<String, DynamicFilterItem> map = objectMapper.readValue(s, typeRef);
         Assertions.assertNotNull(map.get("location"));
         Assertions.assertNotNull(map.get("location").getChildren());
         Assertions.assertNotNull(map.get("location").getChildren().get("capital"));
 
-        Assertions.assertInstanceOf(Boolean.class, map.get("location").getChildren().get("capital").getValue());
+        Assertions.assertInstanceOf(Boolean.class, map.get("location").getChildren().get("capital").getPredicates().get(0).getValue());
 
+
+    }
+
+    @Test
+    @Order(12)
+    public void toNumberFormatTest() throws JsonProcessingException {
+        Assertions.assertEquals("9D9",FilterDynamicPropertiesUtils.getFormat(1.1));
+
+        Assertions.assertEquals("9D999",FilterDynamicPropertiesUtils.getFormat(1.123));
 
     }
 

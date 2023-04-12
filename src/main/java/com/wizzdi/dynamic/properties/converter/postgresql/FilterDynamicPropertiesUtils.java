@@ -99,6 +99,6 @@ public class FilterDynamicPropertiesUtils {
     }
 
     public static String getFormat(Number value) {
-        return value.toString().replaceAll("\\d", "9").replaceAll("\\.", "D").replaceAll(",", "G").replaceAll("\\[", "").replaceAll("]", "").replaceAll(" ", "");
+        return "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999D9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999";
     }
 }

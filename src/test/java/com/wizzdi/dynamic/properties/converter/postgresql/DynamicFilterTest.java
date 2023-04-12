@@ -150,6 +150,16 @@ public class DynamicFilterTest {
 
     }
 
+
+    @Test
+    @Order(8)
+    public void testGTPercision() {
+        List<Author> surName = authorService.getAuthors(Map.of("age", DynamicFilterItem.of(FilterType.GREATER_THAN, 0.99)));
+        Assertions.assertEquals(18, surName.size());
+
+
+    }
+
     @Test
     @Order(8)
     public void testGTDate() {
@@ -231,13 +241,6 @@ public class DynamicFilterTest {
 
     }
 
-    @Test
-    @Order(12)
-    public void toNumberFormatTest() throws JsonProcessingException {
-        Assertions.assertEquals("9D9",FilterDynamicPropertiesUtils.getFormat(1.1));
 
-        Assertions.assertEquals("9D999",FilterDynamicPropertiesUtils.getFormat(1.123));
-
-    }
 
 }
